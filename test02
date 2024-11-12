@@ -1,0 +1,47 @@
+package main
+
+import (
+	"fmt"
+	"strconv"
+)
+
+func main() {
+	var input string
+	fmt.Print("Enter string: ")
+	fmt.Scanln(&input)
+
+	n := len(input)
+	inputIntList := make([]int, n+1)
+
+	inputIntList[0] = 0
+
+	for i := 0; i < n; i++ {
+		switch input[i] {
+		case 'L':
+			inputIntList[i+1] = inputIntList[i] - 1
+		case 'R':
+			inputIntList[i+1] = inputIntList[i] + 1
+		case '=':
+			inputIntList[i+1] = inputIntList[i]
+		}
+	}
+
+	min := inputIntList[0]
+	for _, n := range inputIntList {
+		if n < min {
+			min = n
+		}
+	}
+
+	for i := range inputIntList {
+		inputIntList[i] -= min
+	}
+
+	var result string
+	for _, n := range inputIntList {
+		result += strconv.Itoa(n)
+	}
+
+	fmt.Print("Result: ")
+	fmt.Println(result)
+}

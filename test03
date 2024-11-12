@@ -1,0 +1,75 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"regexp"
+	"strings"
+)
+
+func getData() (string, error) {
+	url := "https://baconipsum.com/api/?type=meat-and-filler&paras=99&format=text"
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(body), nil
+}
+
+func summary(w http.ResponseWriter, r *http.Request) {
+	data, err := getData()
+	if err != nil {
+		http.Error(w, "failed get data", http.StatusInternalServerError)
+		return
+	}
+
+	re := regexp.MustCompile(`[^a-zA-Z\s]`)
+	cleanedText := re.ReplaceAllString(data, "")
+
+	words := strings.Fields(strings.ToLower(cleanedText))
+
+	meats := []string{
+		"fatback", "t-bone", "pastrami", "pork", "meatloaf", "jowl", "enim", "bresaola",
+	}
+
+	meatCount := make(map[string]int)
+
+	for _, word := range words {
+		for _, meat := range meats {
+			if word == meat {
+				meatCount[meat]++
+			}
+		}
+	}
+
+	response := map[string]map[string]int{
+		"beef": meatCount,
+	}
+
+	fmt.Println(response)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+	}
+}
+
+func main() {
+	http.HandleFunc("/beef/summary", summary)
+
+	fmt.Println("Starting server on port 8080...")
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		fmt.Println("Error starting server:", err)
+	}
+}
